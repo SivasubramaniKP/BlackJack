@@ -4,7 +4,7 @@ import pygame
 from lib.core.dealer import Dealer
 from lib.core.player import Player
 from enum import Enum, auto
-
+from lib.ui.button import Button
 class GameStates(Enum):
     DEALER_PLACE_CARDS = auto()
     USER_HIT_OR_STAND = auto()
@@ -83,7 +83,6 @@ class DealerPlaceCards:
 
         text = getTextSurface(100, "Dealer Places the cards", (255, 255, 255), (300, 0))
         self.gameplay.screen.blit(text['text_surf'], text['text_rect'])
-        # time.sleep(1)
         self.game_state_manager.set_state(GameStates.USER_HIT_OR_STAND)
 
 
@@ -91,6 +90,9 @@ class UserHitOrStand:
     def __init__(self, game_state_manager, gameplay: Gameplay):
         self.game_state_manager = game_state_manager
         self.gameplay = gameplay
-    
+        self.hit_button = Button(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(300).set_text("Hit").set_position((300, 475)).prepare()
+        self.stand_button = Button(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(300).set_text("Stand").set_position((1300, 475)).prepare()
+
     def run(self):
-        pass
+        self.hit_button.render()
+        self.stand_button.render()

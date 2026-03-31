@@ -23,7 +23,7 @@ class Button:
     
     def set_background(self, bg):
         self.bg = bg
-        self.bg_image = pygame.image.load(self.bg)
+        # self.bg_image = pygame.image.load(self.bg)
         # self.bg_image = pygame.transform.scale(self.bg_image, (self.width, self.height))
         return self
     
