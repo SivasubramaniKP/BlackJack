@@ -24,6 +24,10 @@ class Dealer:
         self.hidden_card, self.visible_card = self.get_card(), self.get_card()
         self.cur_sum = points_translator(self.hidden_card) + points_translator(self.visible_card)
         # BLIT THE CARD TO THE SCREEN
+        # self.screen.blit(self.hidden_card.rear_side, (800, 300))
+        # self.screen.blit(self.visible_card.front_side, (1000, 300))
+
+        return [self.hidden_card, self.visible_card]
 
     def get_player_cards(self):
 
