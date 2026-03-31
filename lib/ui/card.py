@@ -20,6 +20,8 @@ class Card:
         self.front_side = pygame.image.load(front_side_file_location)
         self.rear_side = pygame.image.load(rear_side_file_location)
 
+        self.width = self.front_side.get_rect()[2]
+        self.height = self.front_side.get_rect()[3]
 
        
     def __str__(self):

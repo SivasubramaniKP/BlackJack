@@ -1,39 +1,43 @@
 import pygame
 import time
 import math
+from lib.ui.text_board import TextBoard
 
-class Button:
+class Button(TextBoard):
+
+    # def __init__(self, screen):
+    #     self.screen = screen
 
     def __init__(self, screen):
-        self.screen = screen
+        super().__init__(screen)
     
-    def set_text(self, text):
-        self.text = text
-        return self
+    # def set_text(self, text):
+    #     self.text = text
+    #     return self
 
-    def set_position(self, top_left):
-        self.top_left = top_left
-        return self
+    # def set_position(self, top_left):
+    #     self.top_left = top_left
+    #     return self
     
-    def set_font(self, font):
-        self.font = font
-        self.font_size = 50
-        self.font = pygame.font.Font("./assets/font/Precious.ttf", self.font_size)
-        return self
+    # def set_font(self, font):
+    #     self.font = font
+    #     self.font_size = 50
+    #     self.font = pygame.font.Font("./assets/font/Precious.ttf", self.font_size)
+    #     return self
     
-    def set_background(self, bg):
-        self.bg = bg
-        # self.bg_image = pygame.image.load(self.bg)
-        # self.bg_image = pygame.transform.scale(self.bg_image, (self.width, self.height))
-        return self
+    # def set_background(self, bg):
+    #     self.bg = bg
+    #     # self.bg_image = pygame.image.load(self.bg)
+    #     # self.bg_image = pygame.transform.scale(self.bg_image, (self.width, self.height))
+    #     return self
     
-    def set_height(self, height):
-        self.height = height
-        return self
+    # def set_height(self, height):
+    #     self.height = height
+    #     return self
     
-    def set_width(self, width):
-        self.width = width
-        return self
+    # def set_width(self, width):
+    #     self.width = width
+    #     return self
     
     def is_mouse_over(self):
         mouse_pos = pygame.mouse.get_pos()

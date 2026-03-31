@@ -32,4 +32,4 @@ def points_translator(rank: Rank):
         return rank.value
     if rank in [Rank.JACK, Rank.QUEEN, Rank.KING]:
         return 10
-    return [1, 11]
+    return 11
