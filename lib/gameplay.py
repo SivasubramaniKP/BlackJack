@@ -7,6 +7,8 @@ from enum import Enum, auto
 from lib.ui.button import Button
 from lib.ui.text_board import TextBoard
 from lib.ui.game_enums import *
+from lib.ui.card_slider import CardSlider
+
 class GameStates(Enum):
     DEALER_PLACE_CARDS = auto()
     USER_HIT_OR_STAND = auto()
@@ -32,6 +34,7 @@ class GameplayStateMachine:
     def set_state(self, new_state):
         self.cur_state = new_state
 
+
 class Gameplay(Scene):
     def __init__(self, screen, game_state_manager):
         super().__init__(screen, game_state_manager)
@@ -44,6 +47,10 @@ class Gameplay(Scene):
 
         self.player_card_1 = None
         self.player_card_2 = None
+
+        self.dealer_card_slider = CardSlider(screen, 300, 20)
+        self.player_card_slider = CardSlider(screen, 650, 20)
+
 
         self.state_machine = GameplayStateMachine()
         self.states = {
@@ -65,9 +72,11 @@ class Gameplay(Scene):
 
     def run(self):
         self.screen.blit(self.bg_image, (0, 0))
-        if self.hidden_card and self.visible_card and self.player_card_1 and self.player_card_2: 
-            self.draw_hidden_and_visible_card()
-            self.draw_player_cards()
+        # if self.hidden_card and self.visible_card and self.player_card_1 and self.player_card_2: 
+        #     self.draw_hidden_and_visible_card()
+        #     self.draw_player_cards()
+        self.dealer_card_slider.render()
+        self.player_card_slider.render()
         self.states[self.state_machine.get_state()].run()
 
 
@@ -78,8 +87,15 @@ class DealerPlaceCards:
         self.game_state_manager = game_state_manager
 
     def run(self):
-        self.gameplay.hidden_card, self.gameplay.visible_card = self.gameplay.dealer.place_cards()
-        self.gameplay.player_card_1, self.gameplay.player_card_2 = self.gameplay.dealer.get_player_cards()
+        hidden_card,visible_card = self.gameplay.dealer.place_cards()
+        hidden_card.set_hidden()
+        player_card_1, player_card_2 = self.gameplay.dealer.get_player_cards()
+        
+        self.gameplay.dealer_card_slider.add_card(hidden_card)
+        self.gameplay.dealer_card_slider.add_card(visible_card)
+
+        self.gameplay.player_card_slider.add_card(player_card_1)
+        self.gameplay.player_card_slider.add_card(player_card_2)
 
         text = getTextSurface(100, "Dealer Places the cards", (255, 255, 255), (300, 0))
         self.gameplay.screen.blit(text['text_surf'], text['text_rect'])
@@ -128,7 +144,7 @@ class UserHitOrStand:
     def run(self):
         self.hit_button.render()
         self.stand_button.render()
-        self.current_hand_render(None)
+        # self.current_hand_render(None)
         self.handle_event()
         pygame.draw.rect(self.screen, (255, 0, 0), self.hit_button.bg_rect, 5)
         pygame.draw.rect(self.screen, (0, 255, 0), self.stand_button.bg_rect, 5)
@@ -140,8 +156,7 @@ class UserHitOrStand:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if self.hit_button.is_mouse_over():
-                        self.current_hand_render("Hit button is pressed")
-                        print("PRESSING HIT BUTTON")
+                        self.gameplay.player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
     
         
         if self.hit_button.is_mouse_over():
