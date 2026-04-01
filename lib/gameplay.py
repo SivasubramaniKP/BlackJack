@@ -8,6 +8,7 @@ from lib.ui.button import Button
 from lib.ui.text_board import TextBoard
 from lib.ui.game_enums import *
 from lib.ui.card_slider import CardSlider
+from lib.ui.chip import Chip
 
 class GameStates(Enum):
     DEALER_PLACE_CARDS = auto()
@@ -39,7 +40,7 @@ class Gameplay(Scene):
     def __init__(self, screen, game_state_manager):
         super().__init__(screen, game_state_manager)
 
-        self.player = Player(screen, 1000)
+        self.player = Player(screen)
         self.dealer = Dealer(screen)
 
         self.hidden_card = None
@@ -78,6 +79,16 @@ class Gameplay(Scene):
         self.dealer_card_slider.render()
         self.player_card_slider.render()
         self.states[self.state_machine.get_state()].run()
+
+class PlaceBets:
+
+    def __init__(self, game_state_manager: GameplayStateMachine, gameplay:Gameplay):
+        self.game_state_manager = game_state_manager
+        self.gameplay = gameplay
+
+
+    def render(self):
+        pass
 
 
 class DealerPlaceCards:
@@ -118,19 +129,19 @@ class UserHitOrStand:
         # print("Text of the board", self.current_hand.text)
     
     def count_points_in_hand(self):
-        current_hand = points_translator(self.gameplay.player_card_1.rank) + points_translator(self.gameplay.player_card_2.rank)
-        if current_hand == 21:
-            return "Black Jack"
-        if current_hand > 21:
-            if self.gameplay.player_card_1.rank == Rank.ACE or self.gameplay.player_card_2.rank == Rank.ACE:
-                return current_hand - 10
-        return current_hand
+        curr_hand = 0
+        for card in self.gameplay.player_card_slider.cards:
+            curr_hand += points_translator(card.rank)
+
+            if card.rank == Rank.ACE and curr_hand > 21:
+                curr_hand -= 10
+        return curr_hand
 
     def change_current_hand_text(self, text):
         self.current_hand = self.current_hand.set_text(text).prepare()
 
     def current_hand_render(self, text):
-        mid_x = (1000 + self.gameplay.visible_card.width + 800)//2
+        mid_x = 1920//2
         mid_y = 950
 
         if not text:
@@ -144,7 +155,7 @@ class UserHitOrStand:
     def run(self):
         self.hit_button.render()
         self.stand_button.render()
-        # self.current_hand_render(None)
+        self.current_hand_render(None)
         self.handle_event()
         pygame.draw.rect(self.screen, (255, 0, 0), self.hit_button.bg_rect, 5)
         pygame.draw.rect(self.screen, (0, 255, 0), self.stand_button.bg_rect, 5)
@@ -160,4 +171,5 @@ class UserHitOrStand:
     
         
         if self.hit_button.is_mouse_over():
-            pass
+            chip = Chip(self.screen, 5000)
+            chip.render_front((1920//2, 1080//2))
