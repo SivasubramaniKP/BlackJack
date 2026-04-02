@@ -13,6 +13,7 @@ from lib.ui.chip import Chip
 class GameStates(Enum):
     DEALER_PLACE_CARDS = auto()
     USER_HIT_OR_STAND = auto()
+    PLACE_BETS = auto()
 
 def getTextSurface(font_size = 20, text= "hello", color=(255, 255, 255), position=(0, 0)):
     text_surf = pygame.font.Font("./assets/font/Precious.ttf", font_size).render(text, True, color)
@@ -27,7 +28,7 @@ def getTextSurface(font_size = 20, text= "hello", color=(255, 255, 255), positio
 class GameplayStateMachine:
 
     def __init__(self):
-        self.cur_state = GameStates.DEALER_PLACE_CARDS
+        self.cur_state = GameStates.PLACE_BETS
     
     def get_state(self):
         return self.cur_state
@@ -56,7 +57,8 @@ class Gameplay(Scene):
         self.state_machine = GameplayStateMachine()
         self.states = {
             GameStates.DEALER_PLACE_CARDS: DealerPlaceCards(self.state_machine, self),
-            GameStates.USER_HIT_OR_STAND: UserHitOrStand(self.state_machine, self)
+            GameStates.USER_HIT_OR_STAND: UserHitOrStand(self.state_machine, self),
+            GameStates.PLACE_BETS: PlaceBets(self.state_machine, self)
         }
 
         self.bg_image = pygame.image.load("./assets/game/table.jpg")
@@ -85,10 +87,57 @@ class PlaceBets:
     def __init__(self, game_state_manager: GameplayStateMachine, gameplay:Gameplay):
         self.game_state_manager = game_state_manager
         self.gameplay = gameplay
+        self.current_bet_text = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 100)).set_text("Current Bet").prepare()
+        self.current_bet = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 200)).set_text("$0").prepare()
+        self.current_amount = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 900)).set_text("$0").prepare()
+        self.cur_bet = 0
+    def render_coins(self):
+        height_level = 800
+        gap = 30
+
+        chip_width = 64
+        chip_height = 64
+
+        n = len(self.gameplay.player.counts)
+        x = (chip_width/2) + (6/2 - 1) * (gap + chip_width) + (gap/2) 
+        x = 1920//2 - x
+
+        for type in [5000, 1000, 500, 200, 100, 50]:
+            chips = self.gameplay.player.chips[type]
+            stack = height_level
+            for chip in chips:
+                chip.render_side((x, stack))
+                stack -= 10
+            x += chip_width + gap
+    
+    def handle_event(self):
+        player_chips = self.gameplay.player.get_all_chips()
+        events = pygame.event.get()
+        # for event in events:
+        #     if event.type == pygame.MOUSEBUTTONDOWN:
+        #         if event.button == 1:
+        #             for chip in player_chips:
+        #                 if chip.is_mouse_over():
+        #                     self.cur_bet += chip.value
+        #                     self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
+
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_button = pygame.mouse.get_pressed()
+        for chip in player_chips:
+            if mouse_button[0] and chip.is_mouse_over():
+                self.cur_bet += chip.value
+                self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
 
 
-    def render(self):
-        pass
+
+    def run(self):
+        self.current_bet_text.render()
+        self.current_bet.render()
+        self.current_amount.set_text("$" + str(self.gameplay.player.sum)).prepare()
+        self.current_amount.render()
+        self.render_coins()
+        self.handle_event()
+        
 
 
 class DealerPlaceCards:

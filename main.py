@@ -19,8 +19,6 @@ class Game:
         self.running = True
 
         deck = Deck(rear_color=RearColor.RED, card_rear_variant=2)
-        for card in deck.Cards:
-            print(card)
 
         self.all_sprites = pygame.sprite.Group()
 

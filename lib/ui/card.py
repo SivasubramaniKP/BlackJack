@@ -22,7 +22,6 @@ class Card:
 
         self.width = self.front_side.get_rect()[2]
         self.height = self.front_side.get_rect()[3]
-        print(self.height, self.width)
 
         self.card_rect = self.front_side.get_rect()
 

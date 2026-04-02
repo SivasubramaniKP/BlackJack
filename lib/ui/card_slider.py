@@ -23,7 +23,6 @@ class CardSlider:
         if self.n % 2 == 0:
             x = (CARD_WIDTH/2) + (self.n/2 - 1)*(self.gap + CARD_WIDTH) + (self.gap/2)
             x = 1920/2 - x
-            print(self.n)
 
             for card in self.cards:
                 card.card_rect.center = (x, self.y_axis)
@@ -37,7 +36,6 @@ class CardSlider:
         else:
             x = CARD_WIDTH + (self.n//2 * self.gap) + (self.n//2 - 1) * CARD_WIDTH
             x = 1920/2 - x
-            print("if n is odd X = ", x)
 
             for card in self.cards:
                 card.card_rect.center = (x, self.y_axis)

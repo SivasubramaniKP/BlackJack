@@ -16,7 +16,6 @@ class Chip:
         self.chip_side_rect = self.chip_side.get_rect()
 
         self.screen = screen
-    
 
     def render_front(self, center):
         self.chip_front_rect.center = center
@@ -28,4 +27,8 @@ class Chip:
 
         self.screen.blit(self.chip_side, self.chip_side_rect)
 
-
+    def is_mouse_over(self):
+        mouse_pos = pygame.mouse.get_pos()
+        if self.chip_side_rect.collidepoint(mouse_pos):
+            return True
+        return False
