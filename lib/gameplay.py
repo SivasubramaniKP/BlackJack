@@ -44,14 +44,16 @@ class Gameplay(Scene):
         self.player = Player(screen)
         self.dealer = Dealer(screen)
 
-        self.hidden_card = None
-        self.visible_card = None
+        # self.hidden_card = None
+        # self.visible_card = None
 
-        self.player_card_1 = None
-        self.player_card_2 = None
+        # self.player_card_1 = None
+        # self.player_card_2 = None
 
         self.dealer_card_slider = CardSlider(screen, 300, 20)
         self.player_card_slider = CardSlider(screen, 650, 20)
+
+        self.cur_bet = 0
 
 
         self.state_machine = GameplayStateMachine()
@@ -91,6 +93,8 @@ class PlaceBets:
         self.current_bet = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 200)).set_text("$0").prepare()
         self.current_amount = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 900)).set_text("$0").prepare()
         self.cur_bet = 0
+        self.bet = Button(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(400).set_position((1920//2 - 200, 1080//2 - 50)).set_text("Bet").prepare()
+
     def render_coins(self):
         height_level = 800
         gap = 30
@@ -109,34 +113,46 @@ class PlaceBets:
                 chip.render_side((x, stack))
                 stack -= 10
             x += chip_width + gap
-    
-    def handle_event(self):
-        player_chips = self.gameplay.player.get_all_chips()
-        events = pygame.event.get()
-        # for event in events:
-        #     if event.type == pygame.MOUSEBUTTONDOWN:
-        #         if event.button == 1:
-        #             for chip in player_chips:
-        #                 if chip.is_mouse_over():
-        #                     self.cur_bet += chip.value
-        #                     self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
 
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_button = pygame.mouse.get_pressed()
-        for chip in player_chips:
-            if mouse_button[0] and chip.is_mouse_over():
-                self.cur_bet += chip.value
-                self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
+    def handle_bet(self):
+        if self.cur_bet != 0:
+            self.gameplay.cur_bet = self.cur_bet
+            self.game_state_manager.set_state(GameStates.DEALER_PLACE_CARDS)
+    
+    def handle_event(self, events):
+        player_chips = self.gameplay.player.get_all_chips()
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    for chip in player_chips:
+                        if chip.is_mouse_over():
+                            self.cur_bet += chip.value
+                            self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
+                            self.gameplay.player.chips[chip.value].pop()
+                            break
+                    
+                    if self.bet.is_mouse_over():
+                        self.handle_bet()
+
+        # mouse_pos = pygame.mouse.get_pos()
+        # mouse_button = pygame.mouse.get_pressed()
+        # for chip in player_chips:
+        #     if mouse_button[0] and chip.is_mouse_over():
+        #         self.cur_bet += chip.value
+        #         self.current_bet.set_text("$" + str(self.cur_bet)).prepare()
 
 
 
     def run(self):
+        events = pygame.event.get()
+
         self.current_bet_text.render()
         self.current_bet.render()
         self.current_amount.set_text("$" + str(self.gameplay.player.sum)).prepare()
         self.current_amount.render()
         self.render_coins()
-        self.handle_event()
+        self.bet.render()
+        self.handle_event(events)
         
 
 
