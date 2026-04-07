@@ -9,6 +9,7 @@ class Button(TextBoard):
     #     self.screen = screen
 
     def __init__(self, screen):
+        self.animation_clock = 0
         super().__init__(screen)
     
     # def set_text(self, text):
@@ -73,7 +74,6 @@ class Button(TextBoard):
 
     def prepare(self):
 
-        self.animation_clock = 0
         self.bg_image = pygame.Surface((self.width, self.height))
         color = (255, 247, 205) 
         self.bg_image.fill(color)

@@ -14,6 +14,7 @@ class GameStates(Enum):
     DEALER_PLACE_CARDS = auto()
     USER_HIT_OR_STAND = auto()
     PLACE_BETS = auto()
+    USER_BUST = auto()
 
 def getTextSurface(font_size = 20, text= "hello", color=(255, 255, 255), position=(0, 0)):
     text_surf = pygame.font.Font("./assets/font/Precious.ttf", font_size).render(text, True, color)
@@ -50,8 +51,6 @@ class Gameplay(Scene):
         # self.player_card_1 = None
         # self.player_card_2 = None
 
-        self.dealer_card_slider = CardSlider(screen, 300, 20)
-        self.player_card_slider = CardSlider(screen, 650, 20)
 
         self.cur_bet = 0
 
@@ -60,28 +59,39 @@ class Gameplay(Scene):
         self.states = {
             GameStates.DEALER_PLACE_CARDS: DealerPlaceCards(self.state_machine, self),
             GameStates.USER_HIT_OR_STAND: UserHitOrStand(self.state_machine, self),
-            GameStates.PLACE_BETS: PlaceBets(self.state_machine, self)
+            GameStates.PLACE_BETS: PlaceBets(self.state_machine, self),
+            GameStates.USER_BUST: UserBust(self.state_machine, self)
         }
 
         self.bg_image = pygame.image.load("./assets/game/table.jpg")
         self.bg_image = pygame.transform.scale(self.bg_image, (1920, 1080))
 
+    def refresh_state(self, state: GameStates):
+        match state:
+            case GameStates.PLACE_BETS:
+                self.states[state] = PlaceBets(self.state_machine, self)
+            case GameStates.USER_BUST:
+                self.states[state] = UserBust(self.state_machine, self)
+            case GameStates.USER_HIT_OR_STAND:
+                self.states[state] = UserHitOrStand(self.state_machine, self)
+            case GameStates.DEALER_PLACE_CARDS:
+                self.states[state] = DealerPlaceCards(self.state_machine, self)
     
-    def draw_hidden_and_visible_card(self):
-        self.screen.blit(self.hidden_card.rear_side, (800, 300))
-        self.screen.blit(self.visible_card.front_side, (1000, 300))
+    # def draw_hidden_and_visible_card(self):
+    #     self.screen.blit(self.hidden_card.rear_side, (800, 300))
+    #     self.screen.blit(self.visible_card.front_side, (1000, 300))
 
-    def draw_player_cards(self):
-        self.screen.blit(self.player_card_1.front_side, (800, 650))
-        self.screen.blit(self.player_card_2.front_side, (1000, 650))
+    # def draw_player_cards(self):
+    #     self.screen.blit(self.player_card_1.front_side, (800, 650))
+    #     self.screen.blit(self.player_card_2.front_side, (1000, 650))
 
     def run(self):
         self.screen.blit(self.bg_image, (0, 0))
         # if self.hidden_card and self.visible_card and self.player_card_1 and self.player_card_2: 
         #     self.draw_hidden_and_visible_card()
         #     self.draw_player_cards()
-        self.dealer_card_slider.render()
-        self.player_card_slider.render()
+        # self.dealer_card_slider.render()
+        # self.player_card_slider.render()
         self.states[self.state_machine.get_state()].run()
 
 class PlaceBets:
@@ -117,6 +127,7 @@ class PlaceBets:
     def handle_bet(self):
         if self.cur_bet != 0:
             self.gameplay.cur_bet = self.cur_bet
+            self.gameplay.refresh_state(GameStates.DEALER_PLACE_CARDS)
             self.game_state_manager.set_state(GameStates.DEALER_PLACE_CARDS)
     
     def handle_event(self, events):
@@ -161,17 +172,22 @@ class DealerPlaceCards:
     def __init__(self, game_state_manager: GameplayStateMachine, gameplay: Gameplay):
         self.gameplay = gameplay
         self.game_state_manager = game_state_manager
+        self.dealer_card_slider = CardSlider(gameplay.screen, 300, 20)
+        self.player_card_slider = CardSlider(gameplay.screen, 650, 20)
 
     def run(self):
         hidden_card,visible_card = self.gameplay.dealer.place_cards()
         hidden_card.set_hidden()
         player_card_1, player_card_2 = self.gameplay.dealer.get_player_cards()
         
-        self.gameplay.dealer_card_slider.add_card(hidden_card)
-        self.gameplay.dealer_card_slider.add_card(visible_card)
+        self.dealer_card_slider.add_card(hidden_card)
+        self.dealer_card_slider.add_card(visible_card)
 
-        self.gameplay.player_card_slider.add_card(player_card_1)
-        self.gameplay.player_card_slider.add_card(player_card_2)
+        self.player_card_slider.add_card(player_card_1)
+        self.player_card_slider.add_card(player_card_2)
+
+        self.player_card_slider.render()
+        self.dealer_card_slider.render()
 
         text = getTextSurface(100, "Dealer Places the cards", (255, 255, 255), (300, 0))
         self.gameplay.screen.blit(text['text_surf'], text['text_rect'])
@@ -195,7 +211,16 @@ class UserHitOrStand:
     
     def count_points_in_hand(self):
         curr_hand = 0
-        for card in self.gameplay.player_card_slider.cards:
+        for card in self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.cards:
+            curr_hand += points_translator(card.rank)
+
+            if card.rank == Rank.ACE and curr_hand > 21:
+                curr_hand -= 10
+        return curr_hand
+
+    def count_dealer_points_in_hand(self):
+        curr_hand = 0
+        for card in self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.cards:
             curr_hand += points_translator(card.rank)
 
             if card.rank == Rank.ACE and curr_hand > 21:
@@ -226,15 +251,45 @@ class UserHitOrStand:
         pygame.draw.rect(self.screen, (0, 255, 0), self.stand_button.bg_rect, 5)
         # pygame.draw.rect(self.screen, (255, 0, 0), self., 2)
 
+        self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.render()
+        self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.render()
+
+    def handle_stand(self):
+        if self.gameplay.dealer.hit_or_stand() == "HIT":
+            self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.add_card(self.gameplay.dealer.get_card())
+        
+        if self.count_dealer_points_in_hand() > 21:
+            self.current_hand.set_text("User Wins !").prepare()
+
     def handle_event(self):
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if self.hit_button.is_mouse_over():
-                        self.gameplay.player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
-    
+                        # self.gameplay.player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
+                        self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
+                        if self.count_points_in_hand() > 21:
+                            self.game_state_manager.set_state(GameStates.USER_BUST)
+                    
+                    if self.stand_button.is_mouse_over():
+                        print("inside handle stand")
+                        self.handle_stand()
+
+class UserBust:
+
+    def __init__(self, state_machine:GameplayStateMachine, gameplay:Gameplay):
         
-        if self.hit_button.is_mouse_over():
-            chip = Chip(self.screen, 5000)
-            chip.render_front((1920//2, 1080//2))
+        self.gameplay = gameplay 
+        self.game_state_machine = state_machine
+        self.bust_text_board = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Bust").set_position((0, 0)).prepare()
+        self.last = pygame.time.get_ticks()
+        self.cooldown = 5000
+
+    def run(self):
+        now = pygame.time.get_ticks()
+        self.bust_text_board.render()
+        if now - self.last >= self.cooldown:
+            self.last = now
+            # self.gameplay.refresh_state(GameStates.PLACE_BETS)
+            self.game_state_machine.set_state(GameStates.PLACE_BETS)
