@@ -85,14 +85,14 @@ class Gameplay(Scene):
     #     self.screen.blit(self.player_card_1.front_side, (800, 650))
     #     self.screen.blit(self.player_card_2.front_side, (1000, 650))
 
-    def run(self):
+    def run(self, events):
         self.screen.blit(self.bg_image, (0, 0))
         # if self.hidden_card and self.visible_card and self.player_card_1 and self.player_card_2: 
         #     self.draw_hidden_and_visible_card()
         #     self.draw_player_cards()
         # self.dealer_card_slider.render()
         # self.player_card_slider.render()
-        self.states[self.state_machine.get_state()].run()
+        self.states[self.state_machine.get_state()].run(events)
 
 class PlaceBets:
 
@@ -154,9 +154,7 @@ class PlaceBets:
 
 
 
-    def run(self):
-        events = pygame.event.get()
-
+    def run(self, events):
         self.current_bet_text.render()
         self.current_bet.render()
         self.current_amount.set_text("$" + str(self.gameplay.player.sum)).prepare()
@@ -175,7 +173,7 @@ class DealerPlaceCards:
         self.dealer_card_slider = CardSlider(gameplay.screen, 300, 20)
         self.player_card_slider = CardSlider(gameplay.screen, 650, 20)
 
-    def run(self):
+    def run(self, events):
         hidden_card,visible_card = self.gameplay.dealer.place_cards()
         hidden_card.set_hidden()
         player_card_1, player_card_2 = self.gameplay.dealer.get_player_cards()
@@ -242,11 +240,11 @@ class UserHitOrStand:
         self.current_hand.bg_rect.center = (mid_x, mid_y)
         self.current_hand.render()
 
-    def run(self):
+    def run(self, events):
         self.hit_button.render()
         self.stand_button.render()
         self.current_hand_render(None)
-        self.handle_event()
+        self.handle_event(events)
         pygame.draw.rect(self.screen, (255, 0, 0), self.hit_button.bg_rect, 5)
         pygame.draw.rect(self.screen, (0, 255, 0), self.stand_button.bg_rect, 5)
         # pygame.draw.rect(self.screen, (255, 0, 0), self., 2)
@@ -261,8 +259,7 @@ class UserHitOrStand:
         if self.count_dealer_points_in_hand() > 21:
             self.current_hand.set_text("User Wins !").prepare()
 
-    def handle_event(self):
-        events = pygame.event.get()
+    def handle_event(self, events):
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
@@ -286,7 +283,7 @@ class UserBust:
         self.last = pygame.time.get_ticks()
         self.cooldown = 5000
 
-    def run(self):
+    def run(self, events):
         now = pygame.time.get_ticks()
         self.bust_text_board.render()
         if now - self.last >= self.cooldown:

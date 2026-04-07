@@ -30,21 +30,20 @@ class Game:
     def run(self):
         while self.running:
             self.screen.fill("gray10")
+            events_queue = pygame.event.get()
             self.clock.tick(144)
-            self.events()
+            self.events(event_queue=events_queue)
             # self.update()
-            self.states[self.state_machine.get_state()].run()
+            self.states[self.state_machine.get_state()].run(events_queue)
             self.draw()
 
-    def events(self):
-        for event in pygame.event.get():
+    def events(self, event_queue):
+        for event in event_queue:
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pygame.event.post(event)
 
     def update(self):
         # Update all sprites in the group

@@ -29,15 +29,14 @@ class Menu(Scene):
 
         self.card = Card(Suite.HEART, Rank.QUEEN, RearColor.RED, 2)
 
-    def run(self):
+    def run(self, event_queue):
         self.background_render()
         self.text_render()
-        self.handle_input()
+        self.handle_input(event_queue)
         self.button_render()
 
 
-    def handle_input(self):
-        events = pygame.event.get()
+    def handle_input(self, events):
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
@@ -46,6 +45,7 @@ class Menu(Scene):
         
         if self.button.is_mouse_over():
             self.button.handle_mouse_over_animation()
+
     
     def background_render(self):
 
