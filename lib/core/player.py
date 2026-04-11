@@ -1,6 +1,6 @@
 from lib.ui.chip import Chip
 from collections import Counter
-
+import math
 class Player:
 
     def __init__(self, screen):
@@ -26,3 +26,32 @@ class Player:
             res.extend(self.chips[type])
 
         return res
+    
+    def win(self, bet):
+        combination = self.get_chips_greedy(bet)
+        for denom in combination:
+            self.chips[denom].append(Chip(self.screen, denom))
+
+    def refresh_amount(self):
+        res = 0
+        for chip in self.chips:
+            res += chip * len(self.chips[chip]) 
+        print("RES : ",res)
+        self.sum = res
+
+    def get_chips_greedy(self, bet):
+        val = [5000, 1000, 500, 200, 100, 50]
+        combination = []
+        
+        remainder = bet
+        
+        for chip in val:
+            while remainder >= chip:
+                combination.append(chip)
+                remainder -= chip
+                
+        if remainder > 0:
+            print(f"Warning: Could not provide exact chips for ${remainder}")
+            
+        print(combination)
+        return combination

@@ -269,10 +269,9 @@ class UserHitOrStand:
 
         if self.is_evaluation_set:
             self.evaluation_board.render()
-        if self.count_points_in_hand() == 21:
-            pygame.event.post(pygame.event.Event(self.USER_BLACK_JACK))
 
         self.handle_event(events)
+
     def evaluate(self):
         print("INSIDE EVALUATION")
         player = self.count_points_in_hand()
@@ -318,9 +317,10 @@ class UserHitOrStand:
 
     def handle_user_events(self, text):
         self.evaluation_board.set_text(text).prepare()
-        pygame.time.set_timer(self.MY_EVENT, 2000)
+        pygame.time.set_timer(self.MY_EVENT, 3000)
         self.is_evaluation_set = True
         self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.reveal_all_cards()
+        self.gameplay.player.refresh_amount()
 
     def handle_event(self, events):
         for event in events:
@@ -338,8 +338,10 @@ class UserHitOrStand:
                 self.game_state_manager.set_state(GameStates.PLACE_BETS)
             if event.type == self.USER_BLACK_JACK:
                 self.handle_user_events("Black Jack")
+                self.gameplay.player.win(self.gameplay.cur_bet * 2)
             if event.type == self.USER_WINS or event.type == self.DEALER_BUST:
                 self.handle_user_events("You Win")
+                self.gameplay.player.win(self.gameplay.cur_bet * 2)
             if event.type == self.DEALER_WINS or event.type == self.DEALER_BLACK_JACK or event.type == self.USER_BUST:
                 self.handle_user_events("Dealer Wins")
 
