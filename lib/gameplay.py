@@ -1,4 +1,6 @@
 import time
+import random
+from scipy.stats import norm
 from lib.scene import Scene
 import pygame
 from lib.core.dealer import Dealer
@@ -200,18 +202,26 @@ class UserHitOrStand:
         self.screen = self.gameplay.screen
         self.hit_button = Button(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(300).set_text("Hit").set_position((300, 475)).prepare()
         self.stand_button = Button(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(300).set_text("Stand").set_position((1300, 475)).prepare()
-        self.bust_text_board = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Bust").set_position((0, 0)).prepare()
+        # self.bust_text_board = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Bust").set_position((0, 0)).prepare()
+        # self.black_jack_text_board = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Black Jack").set_position((0, 0)).prepare()
 
         # mid_x = (self.gameplay.visible_card.width + 200)//2
         # mid_y = 950
+        self.evaluation_board = TextBoard(self.gameplay.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Bust").set_position((0, 0)).prepare()
 
         self.current_hand = TextBoard(self.screen).set_background("").set_font(None).set_height(100).set_width(500).set_text("Current hand").set_position((0, 0)).prepare()
         # self.current_hand.bg_rect.center = (mid_x, mid_y)mid_i
         # print("Text of the board", self.current_hand.text)
 
-        self.is_bust = False
+        self.is_evaluation_set = False
         self.MY_EVENT = pygame.USEREVENT + 1
-    
+        self.USER_BLACK_JACK = pygame.USEREVENT + 2
+        self.DEALER_BLACK_JACK = pygame.USEREVENT + 3
+        self.USER_WINS = pygame.USEREVENT + 4
+        self.DEALER_WINS = pygame.USEREVENT + 5
+        self.USER_BUST = pygame.USEREVENT + 6
+        self.DEALER_BUST = pygame.USEREVENT + 7
+
     def count_points_in_hand(self):
         curr_hand = 0
         for card in self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.cards:
@@ -246,10 +256,10 @@ class UserHitOrStand:
         self.current_hand.render()
 
     def run(self, events):
+        
         self.hit_button.render()
         self.stand_button.render()
         self.current_hand_render(None)
-        self.handle_event(events)
         pygame.draw.rect(self.screen, (255, 0, 0), self.hit_button.bg_rect, 5)
         pygame.draw.rect(self.screen, (0, 255, 0), self.stand_button.bg_rect, 5)
         # pygame.draw.rect(self.screen, (255, 0, 0), self., 2)
@@ -257,36 +267,81 @@ class UserHitOrStand:
         self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.render()
         self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.render()
 
-        if self.is_bust:
-            self.bust_text_board.render()
+        if self.is_evaluation_set:
+            self.evaluation_board.render()
+        if self.count_points_in_hand() == 21:
+            pygame.event.post(pygame.event.Event(self.USER_BLACK_JACK))
+
+        self.handle_event(events)
+    def evaluate(self):
+        print("INSIDE EVALUATION")
+        player = self.count_points_in_hand()
+        dealer = self.count_dealer_points_in_hand()
+        print(player, dealer)
+        if player == 21:
+            pygame.event.post(pygame.event.Event(self.USER_BLACK_JACK))
+            print("THREW USER BLACK JACK")
+        elif dealer == 21:
+            pygame.event.post(pygame.event.Event(self.DEALER_BLACK_JACK))
+            print("DEALER BLACK JACK")
+        elif player > 21:
+            pygame.event.post(pygame.event.Event(self.USER_BUST))
+            print("USER BUST")
+        elif dealer > 21:
+            pygame.event.post(pygame.event.Event(self.DEALER_BUST))
+            print("DEALER BUST")
+        elif player > dealer:
+            pygame.event.post(pygame.event.Event(self.USER_WINS))
+            print("DEALER WINS")
+        elif dealer > player:
+            pygame.event.post(pygame.event.Event(self.DEALER_WINS))
+            print("USER WINS")
 
     def handle_stand(self):
-        if self.gameplay.dealer.hit_or_stand() == "HIT":
+
+        dealer_score = self.count_dealer_points_in_hand()
+        player_score = self.count_points_in_hand()
+
+        dist = norm(loc = 0, scale = 5)
+        sample = norm.rvs(loc = 0, scale = 5)
+
+        print("DEALER SCORE : ", dealer_score)
+        print("Player score : ", player_score)
+        while dealer_score < 15 + sample:
+            print("15 + sample ", 15 + sample)
             self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.add_card(self.gameplay.dealer.get_card())
-        
-        if self.count_dealer_points_in_hand() > 21:
-            self.current_hand.set_text("User Wins !").prepare()
-    
+            dealer_score = self.count_dealer_points_in_hand()
+            print("DEALER SCORE : ", dealer_score)
+            sample = norm.rvs(loc = 0, scale = 5)
+
+        self.evaluate()
+
+    def handle_user_events(self, text):
+        self.evaluation_board.set_text(text).prepare()
+        pygame.time.set_timer(self.MY_EVENT, 2000)
+        self.is_evaluation_set = True
+        self.gameplay.states[GameStates.DEALER_PLACE_CARDS].dealer_card_slider.reveal_all_cards()
 
     def handle_event(self, events):
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if self.hit_button.is_mouse_over():
-                        self.last = pygame.time.get_ticks()
-                        print("LAST : ", self.last)
-                        # self.gameplay.player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
                         self.gameplay.states[GameStates.DEALER_PLACE_CARDS].player_card_slider.add_card(self.gameplay.dealer.get_hit_cards())
                         if self.count_points_in_hand() > 21:
-                            pygame.time.set_timer(self.MY_EVENT, 2000)
-                            self.is_bust = True
-                    
+                            pygame.event.post(pygame.event.Event(self.USER_BUST))
                     if self.stand_button.is_mouse_over():
-                        print("inside handle stand")
                         self.handle_stand()
             if event.type == self.MY_EVENT:
+                pygame.time.set_timer(self.MY_EVENT, 0)
+                self.gameplay.refresh_state(GameStates.PLACE_BETS)
                 self.game_state_manager.set_state(GameStates.PLACE_BETS)
-
+            if event.type == self.USER_BLACK_JACK:
+                self.handle_user_events("Black Jack")
+            if event.type == self.USER_WINS or event.type == self.DEALER_BUST:
+                self.handle_user_events("You Win")
+            if event.type == self.DEALER_WINS or event.type == self.DEALER_BLACK_JACK or event.type == self.USER_BUST:
+                self.handle_user_events("Dealer Wins")
 
 class UserBust:
 

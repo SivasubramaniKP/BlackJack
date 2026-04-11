@@ -46,5 +46,10 @@ class CardSlider:
 
                 x = x + CARD_WIDTH + self.gap
 
+    def reveal_all_cards(self):
+        for card in self.cards:
+            if card.visible == False:
+                card.visible = True
+
 
 
